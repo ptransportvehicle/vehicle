@@ -1,0 +1,447 @@
+<!DOCTYPE html>
+<html lang="si">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>වාහන කළමණාකරණ පද්ධතිය</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+    <style>
+        /* General Styles */
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #f9f9f9;
+            color: #333;
+            line-height: 1.6;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        h1, h2 {
+            text-align: center;
+            color: #4CAF50;
+            margin-bottom: 20px;
+        }
+
+        /* Login Section */
+        #loginSection {
+            background: #fff;
+            padding: 40px;
+            border-radius: 8px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            max-width: 500px;
+            margin: 50px auto;
+        }
+
+        #loginSection form {
+            display: flex;
+            flex-direction: column;
+        }
+
+        #loginSection label {
+            margin-bottom: 10px;
+            font-weight: bold;
+        }
+
+        #loginSection input {
+            padding: 12px;
+            margin-bottom: 20px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            font-size: 16px;
+        }
+
+        #loginSection button {
+            padding: 12px;
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 16px;
+        }
+
+        #loginSection button:hover {
+            background-color: #45a049;
+        }
+
+        /* Main Interface */
+        #mainInterface {
+            display: none;
+            margin-top: 40px;
+        }
+
+        /* Form Styles */
+        #vehicleForm {
+            background: #fff;
+            padding: 30px;
+            border-radius: 8px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            max-width: 800px; /* Increased width for better visibility */
+            margin: 0 auto;
+        }
+
+        #vehicleForm div {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+
+        #vehicleForm label {
+            margin-bottom: 10px;
+            font-weight: bold;
+        }
+
+        #vehicleForm input, #vehicleForm select {
+            padding: 12px;
+            margin-bottom: 20px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            font-size: 16px;
+            flex: 1;
+        }
+
+        #vehicleForm button {
+            padding: 12px;
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 16px;
+        }
+
+        #vehicleForm button:hover {
+            background-color: #45a049;
+        }
+
+        /* Table Styles */
+        table {
+            width: 100%;
+            margin-top: 40px;
+            border-collapse: collapse;
+            background: #fff;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            border-radius: 8px;
+            overflow: hidden;
+        }
+
+        th, td {
+            padding: 12px;
+            text-align: left;
+            border-bottom: 1px solid #ddd;
+        }
+
+        th {
+            background-color: #4CAF50;
+            color: white;
+        }
+
+        td button {
+            padding: 8px 12px;
+            background-color: #f44336;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+
+        td button:hover {
+            background-color: #d32f2f;
+        }
+
+        /* Vehicle Count Display */
+        #vehicleCount {
+            text-align: right;
+            margin-top: 20px;
+            font-size: 18px;
+            color: #4CAF50;
+            font-weight: bold;
+        }
+
+        /* Download Button */
+        #downloadExcelButton {
+            display: block;
+            margin: 20px auto;
+            padding: 12px 20px;
+            background-color: #008CBA;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 16px;
+        }
+
+        #downloadExcelButton:hover {
+            background-color: #007B9A;
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+
+    <!-- Login Form -->
+    <div id="loginSection">
+        <h2>පිවිසුම</h2>
+        <form id="loginForm">
+            <label for="username">පරිශීලක නාමය:</label>
+            <input type="text" id="username" name="username" required>
+
+            <label for="password">මුරපදය:</label>
+            <input type="password" id="password" name="password" required>
+
+            <button type="submit">පිවිසෙන්න</button>
+        </form>
+    </div>
+
+    <!-- Main Interface (Initially Hidden) -->
+    <div id="mainInterface">
+        <h1>වාහන කළමණාකරණ පද්ධතිය</h1>
+
+        <!-- Form to Add a New Vehicle -->
+        <form id="vehicleForm">
+            <h2> වාහන එක් කරන්න</h2>
+            <div>
+                <input type="text" id="vehicleNumber" name="vehicleNumber" placeholder="වාහන අංකය" required>
+                <select id="vehicleType" name="vehicleType" required>
+                    <option value="">වාහන වර්ගය තෝරන්න</option>
+                    <option value="car">කාර් රථය</option>
+                    <option value="jeep">ජිප් රථය</option>
+                    <option value="van">වෑන් රථය</option>
+                    <option value="cab">කැබ් රථය</option>
+                    <option value="bus">බස් රථය</option>
+                    <option value="truck">ට්‍රක් රථය</option>
+                    <option value="tractor">ටැක්ටර් රථය</option>
+                    <option value="motorcycle">යතුරුපැදි</option>
+                    <option value="ambulance">ආපදා රථය</option>
+                    <option value="fire-truck">ජලප්‍රහාරක රථය</option>
+                    <option value="three-wheeler">ත්‍රිරෝද රථය</option>
+                    <option value="electric-car">ගුවන් විදුලි කාර් රථය</option>
+                    <option value="water-bowser">ජලබවුසර් රථය</option>
+                    <option value="garbage-bowser">ගලි බවුසර් රථය</option>
+                    <option value="tractor-trailer">ටැක්ටර් ටෙලර් බවුසර්</option>
+                    <option value="tractor-garbage">ටැක්ටර් ගලි රථය</option>
+                    <option value="hand-tractor">අත් ටැක්ටර් රථය</option>
+                    <option value="boat">බෝටිටු</option>
+                    <option value="tractor-tailor">ටැක්ටර් ටේලර්</option>
+                    <option value="bowser-trailer">බවුසර් ‍ට්‍රේලර්</option>
+                </select>
+                <input type="text" id="model" name="model" placeholder="මාදිලිය" required>
+                <input type="text" id="manufacturer" name="manufacturer" placeholder="නිශ්පාදකයා" required>
+                <input type="text" id="district" name="district" placeholder="කොට්ඨාශය" required>
+                <input type="text" id="policeStation" name="policeStation" placeholder="පොලිස් ස්ථානය" required>
+                <input type="text" id="releaseOrderNumber" name="releaseOrderNumber" placeholder="නිකුත් කිරීමේ නියෝග අංකය" required>
+                <select id="activity" name="activity" required>
+                    <option value="">ක්‍රියාකාරීත්වය තෝරන්න</option>
+                    <option value="active">ක්‍රියාකාරී</option>
+                    <option value="inactive">අක්‍රිය</option>
+                    <option value="maintenance">අලුත්වැඩියා</option>
+                </select>
+                <button type="submit" id="addVehicleButton">වාහනය එක් කරන්න</button>
+            </div>
+        </form>
+
+        <!-- Vehicle Count Display -->
+        <div id="vehicleCount">එකතු කරන ලද වාහන ප්‍රමාණය: 0</div>
+
+        <!-- Table to Display Vehicles -->
+        <table id="vehicleTable">
+            <thead>
+                <tr>
+                    <th>වාහන අංකය</th>
+                    <th>වාහන වර්ගය</th>
+                    <th>මාදිලිය</th>
+                    <th>නිශ්පාදකයා</th>
+                    <th>කොට්ඨාශය</th>
+                    <th>පොලිස් ස්ථානය</th>
+                    <th>නිකුත් කිරීමේ නියෝග අංකය</th>
+                    <th>ක්‍රියාකාරීත්වය</th>
+                    <th>ක්‍රියා</th>
+                </tr>
+            </thead>
+            <tbody>
+                <!-- Pre-loaded data will be added here -->
+            </tbody>
+        </table>
+
+        <!-- Button to Download Data as Excel -->
+        <button id="downloadExcelButton">Excel ගොනුව බාගත කරන්න</button>
+    </div>
+</div>
+
+<script>
+    // User credentials and roles
+    const users = {
+        "viewer": "view123",     // Viewer can only view data
+        "editor": "edit123",     // Editor can add/edit/delete data
+        "entry": "entry123"      // Data Entry Operator can only add data
+    };
+
+    let currentUserRole = null;
+
+    // Handle login form submission
+    document.getElementById('loginForm').addEventListener('submit', function(event) {
+        event.preventDefault();
+
+        const username = document.getElementById('username').value;
+        const password = document.getElementById('password').value;
+
+        if (users[username] && users[username] === password) {
+            // Successful login
+            currentUserRole = username;
+            document.getElementById('loginSection').style.display = 'none';
+            document.getElementById('mainInterface').style.display = 'block';
+
+            // Enable or disable functionality based on user role
+            if (currentUserRole === 'viewer') {
+                document.getElementById('addVehicleButton').disabled = true;
+                document.getElementById('downloadExcelButton').disabled = true;
+                alert("ඔබට දත්ත බැලීමට පමණක් අවසර ඇත.");
+            } else if (currentUserRole === 'editor') {
+                document.getElementById('addVehicleButton').disabled = false;
+                document.getElementById('downloadExcelButton').disabled = false;
+                alert("ඔබට දත්ත එකතු කිරීමට, වෙනස් කිරීමට සහ Excel ගොනුව බාගත කිරීමට අවසර ඇත.");
+            } else if (currentUserRole === 'entry') {
+                document.getElementById('addVehicleButton').disabled = false;
+                document.getElementById('downloadExcelButton').disabled = true;
+                alert("ඔබට දත්ත එකතු කිරීමට පමණක් අවසර ඇත.");
+            }
+        } else {
+            // Invalid credentials
+            alert("අවලංගු පරිශීලක නාමය හෝ මුරපදය!");
+        }
+    });
+
+    // JavaScript to handle form submission and display data in the table
+    document.getElementById('vehicleForm').addEventListener('submit', function(event) {
+        event.preventDefault();
+
+        // Get form values
+        const vehicleNumber = document.getElementById('vehicleNumber').value;
+        const vehicleType = document.getElementById('vehicleType').value;
+        const model = document.getElementById('model').value;
+        const manufacturer = document.getElementById('manufacturer').value;
+        const district = document.getElementById('district').value;
+        const policeStation = document.getElementById('policeStation').value;
+        const releaseOrderNumber = document.getElementById('releaseOrderNumber').value;
+        const activity = document.getElementById('activity').value;
+
+        // Create a new row in the table
+        const tableBody = document.querySelector('#vehicleTable tbody');
+        const newRow = document.createElement('tr');
+
+        newRow.innerHTML = `
+            <td>${vehicleNumber}</td>
+            <td>${getVehicleTypeName(vehicleType)}</td>
+            <td>${model}</td>
+            <td>${manufacturer}</td>
+            <td>${district}</td>
+            <td>${policeStation}</td>
+            <td>${releaseOrderNumber}</td>
+            <td>${activity === "active" ? "ක්‍රියාකාරී" : activity === "inactive" ? "අක්‍රිය" : "අලුත්වැඩියා"}</td>
+            <td><button onclick="deleteRow(this)">ඉවත් කරන්න</button></td>
+        `;
+
+        tableBody.appendChild(newRow);
+
+        // Clear the form
+        document.getElementById('vehicleForm').reset();
+
+        // Update vehicle count
+        updateVehicleCount();
+    });
+
+    // Function to delete a row
+    function deleteRow(button) {
+        if (currentUserRole === 'editor') {
+            const row = button.parentNode.parentNode;
+            row.parentNode.removeChild(row);
+            // Update vehicle count after deletion
+            updateVehicleCount();
+        } else {
+            alert("ඔබට දත්ත ඉවත් කිරීමට අවසර නොමැත.");
+        }
+    }
+
+    // Function to update vehicle count
+    function updateVehicleCount() {
+        const rowCount = document.querySelectorAll('#vehicleTable tbody tr').length;
+        document.getElementById('vehicleCount').innerText = `එකතු කරන ලද වාහන ප්‍රමාණය: ${rowCount}`;
+    }
+
+    // Function to map vehicle type codes to names
+    function getVehicleTypeName(type) {
+        const vehicleTypes = {
+            "car": "කාර් රථය",
+            "jeep": "ජිප් රථය",
+            "van": "වෑන් රථය",
+            "cab": "කැබ් රථය",
+            "bus": "බස් රථය",
+            "truck": "ට්‍රක් රථය",
+            "tractor": "ටැක්ටර් රථය",
+            "motorcycle": "යතුරුපැදි",
+            "ambulance": "ආපදා රථය",
+            "fire-truck": "ජලප්‍රහාරක රථය",
+            "three-wheeler": "ත්‍රිරෝද රථය",
+            "electric-car": "ගුවන් විදුලි කාර් රථය",
+            "water-bowser": "ජලබවුසර් රථය",
+            "garbage-bowser": "ගලි බවුසර් රථය",
+            "tractor-trailer": "ටැක්ටර් ටෙලර් බවුසර්",
+            "tractor-garbage": "ටැක්ටර් ගලි රථය",
+            "hand-tractor": "අත් ටැක්ටර් රථය",
+            "boat": "බෝටිටු",
+            "tractor-tailor": "ටැක්ටර් ටේලර්",
+            "bowser-trailer": "බවුසර් ‍ට්‍රේලර්"
+        };
+        return vehicleTypes[type] || "අනුන්වත්";
+    }
+
+    // Function to download data as Excel
+    document.getElementById('downloadExcelButton').addEventListener('click', function() {
+        if (currentUserRole !== 'editor') {
+            alert("ඔබට Excel ගොනුව බාගත කිරීමට අවසර නොමැත.");
+            return;
+        }
+
+        const table = document.getElementById('vehicleTable');
+        const rows = table.querySelectorAll('tr');
+        const data = [];
+
+        // Extract table headers
+        const headers = [];
+        rows[0].querySelectorAll('th').forEach(header => {
+            headers.push(header.innerText);
+        });
+        data.push(headers);
+
+        // Extract table rows
+        for (let i = 1; i < rows.length; i++) {
+            const rowData = [];
+            rows[i].querySelectorAll('td').forEach(cell => {
+                rowData.push(cell.innerText);
+            });
+            data.push(rowData);
+        }
+
+        // Create a workbook and worksheet
+        const ws = XLSX.utils.aoa_to_sheet(data);
+        const wb = XLSX.utils.book_new();
+        XLSX.utils.book_append_sheet(wb, ws, 'Vehicles');
+
+        // Export the Excel file
+        XLSX.writeFile(wb, 'vehicles.xlsx');
+    });
+</script>
+
+</body>
+</html>
